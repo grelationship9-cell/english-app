@@ -1,0 +1,284 @@
+:root{
+  --bg:#10131b;
+  --card:#1a1f2b;
+  --line:#2b3243;
+  --fg:#e9ecf3;
+  --dim:#98a1b5;
+  --acc:#5b9dff;
+  --ok:#3ecf8e;
+  --warn:#ffb86b;
+}
+
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+
+html,body{height:100%}
+
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--fg);
+  font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif;
+  line-height:1.75;
+  font-size:16px;
+  -webkit-font-smoothing:antialiased;
+}
+
+#app{
+  max-width:520px;
+  margin:0 auto;
+  padding:max(20px, env(safe-area-inset-top)) 20px max(28px, env(safe-area-inset-bottom));
+  min-height:100%;
+  display:flex;
+  flex-direction:column;
+}
+
+.screen{
+  flex:1;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+}
+
+.hidden{display:none !important}
+
+/* ---- はじめ / おわり ---- */
+
+.scene-emoji{font-size:64px;text-align:center;line-height:1;margin-bottom:16px}
+
+h1{
+  font-size:28px;
+  text-align:center;
+  margin:0 0 4px;
+  letter-spacing:.02em;
+}
+
+.act{
+  text-align:center;
+  color:var(--dim);
+  font-size:15px;
+  margin:0 0 24px;
+}
+
+.situation{
+  background:var(--card);
+  border:1px solid var(--line);
+  border-radius:14px;
+  padding:16px 18px;
+  color:var(--dim);
+  font-size:14.5px;
+  margin:0 0 28px;
+}
+
+.mute-note{
+  text-align:center;
+  color:var(--dim);
+  font-size:12.5px;
+  margin-top:20px;
+}
+
+.learned{
+  background:var(--card);
+  border:1px solid var(--line);
+  border-radius:14px;
+  padding:16px 18px;
+  margin:8px 0 28px;
+}
+
+.learned-title{
+  font-size:13px;
+  color:var(--dim);
+  margin:0 0 10px;
+  letter-spacing:.04em;
+}
+
+.learned ul{margin:0;padding-left:20px}
+.learned li{margin:8px 0;font-size:15.5px}
+.learned li span{
+  display:block;
+  color:var(--dim);
+  font-size:13px;
+  line-height:1.5;
+}
+
+/* ---- セッション ---- */
+
+.bar{
+  display:flex;
+  align-items:center;
+  gap:14px;
+  margin-bottom:auto;
+  padding-bottom:28px;
+}
+
+#turn-counter{
+  font-size:13px;
+  color:var(--dim);
+  font-variant-numeric:tabular-nums;
+  flex:none;
+}
+
+.progress{
+  flex:1;
+  height:4px;
+  background:var(--line);
+  border-radius:99px;
+  overflow:hidden;
+}
+
+#progress-fill{
+  height:100%;
+  width:0%;
+  background:var(--acc);
+  border-radius:99px;
+  transition:width .35s ease;
+}
+
+.stage{
+  display:flex;
+  flex-direction:column;
+  margin-bottom:auto;
+}
+
+.stage-label{
+  text-align:center;
+  color:var(--dim);
+  font-size:14px;
+  margin:0 0 22px;
+  letter-spacing:.03em;
+}
+
+.stage-label.correct{color:var(--ok)}
+.stage-label.wrong{color:var(--warn)}
+
+.instruction{
+  text-align:center;
+  font-size:15px;
+  color:var(--fg);
+  margin:0 0 20px;
+}
+
+.say-this{
+  text-align:center;
+  font-size:26px;
+  font-weight:600;
+  margin:0 0 6px;
+  line-height:1.45;
+  letter-spacing:.01em;
+}
+
+.english{
+  text-align:center;
+  font-size:22px;
+  font-weight:600;
+  margin:0 0 10px;
+  line-height:1.5;
+}
+
+.japanese{
+  text-align:center;
+  color:var(--dim);
+  font-size:15px;
+  margin:0 0 20px;
+}
+
+.hint{
+  text-align:center;
+  font-size:13px;
+  color:var(--acc);
+  background:rgba(91,157,255,.08);
+  border-radius:10px;
+  padding:10px 14px;
+  margin:0 0 22px;
+}
+
+.hint:empty{display:none}
+
+.whisper{
+  text-align:center;
+  font-size:12.5px;
+  color:var(--dim);
+  margin:14px 0 0;
+}
+
+/* ---- ボタン ---- */
+
+button{
+  width:100%;
+  padding:17px 18px;
+  margin:7px 0;
+  font-size:17px;
+  font-weight:600;
+  font-family:inherit;
+  color:var(--fg);
+  background:#262d3e;
+  border:1px solid var(--line);
+  border-radius:13px;
+  cursor:pointer;
+  transition:transform .08s ease, background .15s ease;
+}
+
+button:active{transform:scale(.985);background:#303954}
+
+button.primary{
+  background:var(--acc);
+  color:#0a1020;
+  border-color:var(--acc);
+}
+
+button.primary:active{background:#7fb2ff}
+
+button.ghost{
+  background:transparent;
+  color:var(--dim);
+  font-size:15px;
+  font-weight:500;
+  padding:14px;
+}
+
+button.big-play{
+  padding:26px;
+  font-size:20px;
+  letter-spacing:.08em;
+}
+
+/* ---- 選択肢 ---- */
+
+#choices button{
+  text-align:left;
+  line-height:1.6;
+  font-weight:500;
+  font-size:16px;
+}
+
+#choices button.picked-correct{
+  background:rgba(62,207,142,.14);
+  border-color:var(--ok);
+  color:var(--ok);
+}
+
+#choices button.picked-wrong{
+  background:rgba(255,184,107,.12);
+  border-color:var(--warn);
+  color:var(--warn);
+}
+
+#choices button.reveal{
+  border-color:var(--ok);
+  color:var(--ok);
+}
+
+.sub-actions{
+  display:flex;
+  gap:10px;
+  margin-top:10px;
+}
+
+.sub-actions button{margin:0}
+
+/* ---- 再生中 ---- */
+
+button.speaking{
+  background:var(--acc);
+  color:#0a1020;
+  border-color:var(--acc);
+}

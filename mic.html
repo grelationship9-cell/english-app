@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>マイク認識チェック</title>
+<style>
+  :root{
+    --bg:#10131b; --card:#1a1f2b; --line:#2b3243;
+    --fg:#e9ecf3; --dim:#98a1b5; --acc:#5b9dff; --ok:#3ecf8e; --warn:#ffb86b; --ng:#ff7a7a;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{
+    margin:0;padding:18px 18px 60px;background:var(--bg);color:var(--fg);
+    font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif;
+    line-height:1.75;font-size:16px;
+  }
+  h1{font-size:20px;margin:6px 0 4px}
+  .sub{color:var(--dim);font-size:13px;margin-bottom:20px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:14px}
+  .card h2{font-size:15px;margin:0 0 10px;color:var(--acc)}
+  .note{font-size:13px;color:var(--dim);margin:6px 0 12px}
+  button{
+    width:100%;padding:17px;margin:7px 0;font-size:17px;font-weight:600;
+    background:#262d3e;color:var(--fg);border:1px solid var(--line);
+    border-radius:13px;cursor:pointer;font-family:inherit;
+  }
+  button:active{background:#303954}
+  button.primary{background:var(--acc);color:#0a1020;border-color:var(--acc)}
+  button.rec{background:var(--ng);border-color:var(--ng);color:#1a0808}
+  .target{
+    font-size:21px;font-weight:600;text-align:center;
+    padding:18px 12px;background:#0d0f15;border:1px solid var(--line);
+    border-radius:12px;margin:10px 0 4px;line-height:1.5;
+  }
+  .target-ja{text-align:center;color:var(--dim);font-size:14px;margin:0 0 14px}
+  .verdict{font-size:22px;font-weight:700;text-align:center;margin:14px 0 6px}
+  .verdict.ok{color:var(--ok)}
+  .verdict.mid{color:var(--warn)}
+  .verdict.ng{color:var(--ng)}
+  .detail{text-align:center;font-size:14.5px;color:var(--dim);margin:0 0 6px}
+  .heard{
+    font-family:ui-monospace,Menlo,monospace;font-size:14px;
+    background:#0d0f15;border:1px solid var(--line);border-radius:10px;
+    padding:12px;margin-top:10px;color:var(--fg);word-break:break-word;
+  }
+  .heard em{color:var(--ng);font-style:normal}
+  .out{
+    font-family:ui-monospace,Menlo,monospace;font-size:12.5px;white-space:pre-wrap;
+    background:#0d0f15;border:1px solid var(--line);border-radius:10px;
+    padding:12px;margin-top:10px;color:var(--dim);max-height:220px;overflow:auto;
+  }
+  .warn{background:#2a1f1f;border-color:#554433;color:#ffd9a0;font-size:13.5px}
+</style>
+</head>
+<body>
+
+<h1>マイク認識チェック</h1>
+<div class="sub">「自分が言った英語が通じるか」をiPhoneだけで判定できるかの検証</div>
+
+<div class="card warn" id="secure-warn" style="display:none">
+  <strong>このページは https で開く必要があります</strong><br>
+  いまのアドレスではマイクが使えません。<code>https://</code> で開き直してください。
+</div>
+
+<div class="card">
+  <h2>1. 対応状況</h2>
+  <div class="out" id="env">確認中...</div>
+</div>
+
+<div class="card">
+  <h2>2. 言ってみる</h2>
+  <div class="note">下の英文を読み上げてください。押してから話し、言い終わったらもう一度押します。</div>
+
+  <div class="target" id="target">Yes, I have a reservation under Tanaka.</div>
+  <div class="target-ja">はい、田中で予約しています。</div>
+
+  <button class="primary" id="btn-model">▶ お手本を聞く</button>
+  <button id="btn-rec">🎤 話す</button>
+
+  <div id="verdict-box"></div>
+  <div class="heard" id="heard" style="display:none"></div>
+</div>
+
+<div class="card">
+  <h2>3. 別の文でも試す</h2>
+  <div class="note">短い文と長い文で精度が変わるか確認します。</div>
+  <button data-en="Sorry?" data-ja="すみません（聞き返し）">短い: Sorry?</button>
+  <button data-en="Thank you. Where is the elevator?" data-ja="ありがとう。エレベーターはどこですか？">中くらい</button>
+  <button data-en="Excuse me, my room key does not work and the air conditioner is too cold." data-ja="すみません、部屋の鍵が使えなくて、エアコンも寒すぎます。">長い</button>
+</div>
+
+<div class="card">
+  <h2>ログ</h2>
+  <div class="out" id="log">—</div>
+</div>
+
+<script>
+var logEl = document.getElementById('log');
+var lines = [];
+function log(m){
+  lines.push(m);
+  if (lines.length > 40) lines.shift();
+  logEl.textContent = lines.join('\n');
+}
+
+var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+var isSecure = window.isSecureContext;
+
+if (!isSecure) document.getElementById('secure-warn').style.display = 'block';
+
+document.getElementById('env').textContent = [
+  '安全な接続 (https): ' + (isSecure ? 'はい ✓' : 'いいえ ✗  ← マイクが使えません'),
+  '音声認識API: ' + (SR ? 'あり ✓' : 'なし ✗'),
+  '読み上げ: ' + (window.speechSynthesis ? 'あり ✓' : 'なし ✗'),
+  '',
+  'URL: ' + location.origin,
+  'UA: ' + navigator.userAgent
+].join('\n');
+
+/* ---------- 読み上げ ---------- */
+
+var enVoice = null;
+function pickVoice(){
+  if (!window.speechSynthesis) return;
+  var vs = (window.speechSynthesis.getVoices() || []).filter(function(v){ return /^en/i.test(v.lang); });
+  for (var i = 0; i < vs.length; i++) if (/samantha/i.test(vs[i].name)) { enVoice = vs[i]; return; }
+  for (var j = 0; j < vs.length; j++) if (/en[-_]US/i.test(vs[j].lang)) { enVoice = vs[j]; return; }
+  enVoice = vs[0] || null;
+}
+if (window.speechSynthesis) {
+  pickVoice();
+  window.speechSynthesis.onvoiceschanged = pickVoice;
+  setTimeout(pickVoice, 800);
+}
+
+function speak(text){
+  if (!window.speechSynthesis) return;
+  window.speechSynthesis.cancel();
+  var u = new SpeechSynthesisUtterance(text);
+  u.lang = 'en-US';
+  if (enVoice) u.voice = enVoice;
+  u.rate = 0.8;
+  setTimeout(function(){ window.speechSynthesis.speak(u); }, 60);
+}
+
+/* ---------- 判定 ---------- */
+
+function words(s){
+  return s.toLowerCase()
+          .replace(/[^a-z0-9'\s]/g, ' ')
+          .split(/\s+/)
+          .filter(Boolean);
+}
+
+// 内容語だけを見る（a / the / is などの取りこぼしは通じ方に影響しない）
+var FILLER = {'a':1,'an':1,'the':1,'is':1,'are':1,'am':1,'do':1,'does':1,
+              'to':1,'of':1,'and':1,'in':1,'it':1,'you':1,'i':1,'my':1,'me':1};
+
+function judge(target, heard){
+  var t = words(target), h = words(heard);
+  var pool = h.slice();
+  var missing = [];
+  var keyTotal = 0, keyHit = 0;
+
+  t.forEach(function(w){
+    var isKey = !FILLER[w];
+    if (isKey) keyTotal++;
+    var idx = pool.indexOf(w);
+    if (idx >= 0) {
+      pool.splice(idx, 1);
+      if (isKey) keyHit++;
+    } else if (isKey) {
+      missing.push(w);
+    }
+  });
+
+  var ratio = keyTotal ? keyHit / keyTotal : 1;
+  return { ratio: ratio, missing: missing, heard: heard };
+}
+
+function showVerdict(target, heard){
+  var r = judge(target, heard);
+  var box = document.getElementById('verdict-box');
+  var v = document.createElement('div');
+  var d = document.createElement('div');
+  d.className = 'detail';
+
+  if (r.ratio >= 0.85) {
+    v.className = 'verdict ok';  v.textContent = '✓ 通じます';
+    d.textContent = 'そのまま使って大丈夫です';
+  } else if (r.ratio >= 0.5) {
+    v.className = 'verdict mid'; v.textContent = '△ 惜しい';
+    d.textContent = '「' + r.missing.join('」「') + '」が聞き取れませんでした';
+  } else {
+    v.className = 'verdict ng';  v.textContent = '✗ 違うようです';
+    d.textContent = 'もう一度お手本を聞いてみましょう';
+  }
+
+  box.innerHTML = '';
+  box.appendChild(v);
+  box.appendChild(d);
+
+  var hEl = document.getElementById('heard');
+  hEl.style.display = 'block';
+  hEl.textContent = '聞こえたのは: ' + heard;
+  log('判定 ' + Math.round(r.ratio * 100) + '% / 欠け: ' + (r.missing.join(',') || 'なし'));
+}
+
+/* ---------- 録音 ---------- */
+
+var rec = null;
+var recording = false;
+var btnRec = document.getElementById('btn-rec');
+
+function currentTarget(){ return document.getElementById('target').textContent; }
+
+function stopRec(){
+  recording = false;
+  btnRec.classList.remove('rec');
+  btnRec.textContent = '🎤 話す';
+  if (rec) { try { rec.stop(); } catch (e) {} }
+}
+
+btnRec.addEventListener('click', function(){
+  if (!SR) { log('✗ 音声認識APIがありません'); return; }
+  if (!isSecure) { log('✗ https で開いてください'); return; }
+
+  if (recording) { stopRec(); return; }
+
+  rec = new SR();
+  rec.lang = 'en-US';
+  rec.interimResults = false;
+  rec.maxAlternatives = 3;
+  rec.continuous = false;
+
+  rec.onstart = function(){ log('🎤 録音開始'); };
+  rec.onresult = function(e){
+    var best = e.results[0][0];
+    log('認識: "' + best.transcript + '" (確信度 ' + (best.confidence || 0).toFixed(2) + ')');
+    showVerdict(currentTarget(), best.transcript);
+    stopRec();
+  };
+  rec.onerror = function(e){
+    log('✗ エラー: ' + e.error);
+    if (e.error === 'not-allowed') log('  → マイクの許可が必要です');
+    stopRec();
+  };
+  rec.onend = function(){ log('■ 録音終了'); stopRec(); };
+
+  try {
+    rec.start();
+    recording = true;
+    btnRec.classList.add('rec');
+    btnRec.textContent = '⏹ 話し終わったら押す';
+  } catch (err) {
+    log('✗ 開始できません: ' + err);
+    stopRec();
+  }
+});
+
+document.getElementById('btn-model').addEventListener('click', function(){
+  speak(currentTarget());
+});
+
+Array.prototype.forEach.call(document.querySelectorAll('button[data-en]'), function(btn){
+  btn.addEventListener('click', function(){
+    document.getElementById('target').textContent = btn.dataset.en;
+    document.querySelector('.target-ja').textContent = btn.dataset.ja;
+    document.getElementById('verdict-box').innerHTML = '';
+    document.getElementById('heard').style.display = 'none';
+    window.scrollTo(0, 0);
+  });
+});
+</script>
+</body>
+</html>

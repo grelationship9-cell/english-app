@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>音声チェック</title>
+<style>
+  :root{
+    --bg:#11131a; --card:#1b1f2a; --line:#2c3242;
+    --fg:#e8ebf2; --dim:#99a1b3; --acc:#5b9dff; --ok:#3ecf8e;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{
+    margin:0;padding:16px 16px 64px;background:var(--bg);color:var(--fg);
+    font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif;
+    line-height:1.7;font-size:16px;
+  }
+  h1{font-size:20px;margin:8px 0 4px}
+  .sub{color:var(--dim);font-size:13px;margin-bottom:20px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:14px}
+  .card h2{font-size:15px;margin:0 0 10px;color:var(--acc);letter-spacing:.02em}
+  .note{font-size:13px;color:var(--dim);margin:6px 0 12px}
+  button{
+    width:100%;padding:16px;margin:6px 0;font-size:17px;font-weight:600;
+    background:#2a3145;color:var(--fg);border:1px solid var(--line);
+    border-radius:12px;cursor:pointer;font-family:inherit;
+  }
+  button:active{background:#343d55}
+  button.primary{background:var(--acc);color:#0b1020;border-color:var(--acc)}
+  .out{
+    font-family:ui-monospace,Menlo,monospace;font-size:12.5px;white-space:pre-wrap;
+    background:#0d0f15;border:1px solid var(--line);border-radius:10px;
+    padding:12px;margin-top:10px;color:var(--dim);max-height:260px;overflow:auto;
+  }
+  .warn{background:#2a1f1f;border-color:#554433;color:#ffd9a0;font-size:13.5px}
+  label.chk{
+    display:flex;gap:12px;align-items:flex-start;padding:12px;margin:6px 0;
+    background:#0d0f15;border:1px solid var(--line);border-radius:10px;font-size:15px;
+  }
+  label.chk input{width:22px;height:22px;margin:2px 0 0;flex:none;accent-color:var(--ok)}
+  .big{font-size:15px;color:var(--fg)}
+</style>
+</head>
+<body>
+
+<h1>音声チェック（工程0）</h1>
+<div class="sub">iPhoneで英語が喋るか・速度が変わるかだけを確かめます</div>
+
+<div class="card warn">
+  <strong>先に確認してください</strong><br>
+  ・iPhone側面の<strong>消音スイッチをオフ</strong>（マナーモード解除）<br>
+  ・音量を上げる<br>
+  <span style="color:#bbaa99">iOSは消音スイッチで読み上げも消えます。</span>
+</div>
+
+<div class="card">
+  <h2>1. 対応状況</h2>
+  <div class="out" id="env">確認中...</div>
+</div>
+
+<div class="card">
+  <h2>2. まず喋らせる</h2>
+  <div class="note">押すと英語で「Do you have a reservation?」と喋ります。</div>
+  <button class="primary" id="b-basic">▶ 喋らせる</button>
+</div>
+
+<div class="card">
+  <h2>3. 速度の違い（重要）</h2>
+  <div class="note">4段階を順に押して、<strong>速さがはっきり違うか</strong>を確かめてください。ここが難易度Lv1〜5の土台です。</div>
+  <button data-rate="0.5">🐢 とてもゆっくり (0.5)</button>
+  <button data-rate="0.75">🚶 ゆっくり (0.75)</button>
+  <button data-rate="1.0">🏃 ふつう (1.0)</button>
+  <button data-rate="1.4">⚡ 早口 (1.4)</button>
+</div>
+
+<div class="card">
+  <h2>4. 長い文（途中で切れないか）</h2>
+  <div class="note">実際の第3幕に出す想定の長さです。最後まで喋り切るか見てください。</div>
+  <button id="b-long">▶ 長い文を再生</button>
+</div>
+
+<div class="card">
+  <h2>5. 2文つづけて</h2>
+  <div class="note">会話のやり取りを想定。2つ目がちゃんと鳴るか確認します。</div>
+  <button id="b-two">▶ 2文つづけて再生</button>
+</div>
+
+<div class="card">
+  <h2>6. 訛りの聞き比べ（追加）</h2>
+  <div class="note">
+    同じ文を、違う国の声で読ませます。<strong>どれが難しく感じるか</strong>を確かめてください。
+    難易度Lv4・Lv5をこれで作ります。
+  </div>
+  <div id="accents">読み込み中...</div>
+</div>
+
+<div class="card">
+  <h2>7. 結果</h2>
+  <div class="note">上を試して、当てはまるものにチェックしてください。</div>
+  <label class="chk"><input type="checkbox" id="c1"><span>英語の音がちゃんと鳴った</span></label>
+  <label class="chk"><input type="checkbox" id="c2"><span>速度4段階の違いが<strong>はっきり</strong>分かった</span></label>
+  <label class="chk"><input type="checkbox" id="c3"><span>長い文が最後まで切れずに鳴った</span></label>
+  <label class="chk"><input type="checkbox" id="c4"><span>2文つづけて鳴った</span></label>
+  <label class="chk"><input type="checkbox" id="c5"><span>声は聞き取りやすいと感じた</span></label>
+  <button class="primary" id="b-result">結果をまとめる</button>
+  <div class="out big" id="result">まだ結果はありません</div>
+</div>
+
+<div class="card">
+  <h2>ログ</h2>
+  <div class="out" id="log">—</div>
+</div>
+
+<script>
+var LINE_BASIC = 'Do you have a reservation?';
+var LINE_LONG  = 'You are on the fourth floor. Breakfast is served from seven to ten in the morning, and the restaurant is just next to the lobby.';
+var LINE_TWO   = ['May I see your passport, please?', 'Thank you. Here is your key card.'];
+var LINE_ACCENT = 'You are on the fourth floor. Breakfast is from seven to ten.';
+
+var logEl = document.getElementById('log');
+var lines = [];
+function log(m){
+  lines.push(m);
+  if (lines.length > 40) lines.shift();
+  logEl.textContent = lines.join('\n');
+}
+
+var voices = [];
+var enVoices = [];
+var enVoice = null;
+
+function loadVoices(){
+  if (!window.speechSynthesis) return;
+  voices = window.speechSynthesis.getVoices() || [];
+  enVoices = voices.filter(function(v){ return /^en/i.test(v.lang); });
+  enVoice = null;
+  for (var i = 0; i < enVoices.length; i++) {
+    if (/en[-_]US/i.test(enVoices[i].lang)) { enVoice = enVoices[i]; break; }
+  }
+  if (!enVoice && enVoices.length) enVoice = enVoices[0];
+  showEnv();
+  showAccents();
+}
+
+var LANG_LABEL = {
+  'en-US': 'アメリカ 🇺🇸',
+  'en-GB': 'イギリス 🇬🇧',
+  'en-AU': 'オーストラリア 🇦🇺',
+  'en-IN': 'インド 🇮🇳',
+  'en-IE': 'アイルランド 🇮🇪',
+  'en-ZA': '南アフリカ 🇿🇦',
+  'en-NZ': 'ニュージーランド 🇳🇿',
+  'en-SC': 'スコットランド 🏴',
+  'en-CA': 'カナダ 🇨🇦'
+};
+
+function showAccents(){
+  var box = document.getElementById('accents');
+  if (!box) return;
+  if (!enVoices.length) { box.textContent = '英語の声が見つかりません'; return; }
+
+  var byLang = {};
+  enVoices.forEach(function(v){
+    var key = v.lang.replace('_', '-');
+    if (!byLang[key]) byLang[key] = v;
+  });
+
+  box.innerHTML = '';
+  Object.keys(byLang).sort().forEach(function(key){
+    var v = byLang[key];
+    var btn = document.createElement('button');
+    btn.textContent = (LANG_LABEL[key] || key) + '  —  ' + v.name;
+    btn.addEventListener('click', function(){ sayWith(v, LINE_ACCENT, 0.95); });
+    box.appendChild(btn);
+  });
+}
+
+function sayWith(voice, text, rate){
+  if (!window.speechSynthesis) { log('✗ 読み上げ機能なし'); return; }
+  window.speechSynthesis.cancel();
+  var u = new SpeechSynthesisUtterance(text);
+  u.voice = voice;
+  u.lang = voice.lang;
+  u.rate = rate;
+  u.onstart = function(){ log('▶ ' + voice.name + ' [' + voice.lang + ']'); };
+  u.onerror = function(e){ log('✗ エラー: ' + (e.error || '不明')); };
+  window.speechSynthesis.speak(u);
+}
+
+function showEnv(){
+  var t = [];
+  t.push('読み上げ機能: ' + (window.speechSynthesis ? 'あり ✓' : 'なし ✗'));
+  t.push('声の総数: ' + voices.length);
+  t.push('英語の声: ' + enVoices.length + '個');
+  if (enVoice) t.push('使う声: ' + enVoice.name + ' (' + enVoice.lang + ')');
+  t.push('');
+  t.push('英語の声 一覧:');
+  enVoices.slice(0, 12).forEach(function(v){ t.push('  ・' + v.name + ' [' + v.lang + ']'); });
+  if (enVoices.length > 12) t.push('  ...ほか' + (enVoices.length - 12) + '個');
+  t.push('');
+  t.push('UA: ' + navigator.userAgent);
+  document.getElementById('env').textContent = t.join('\n');
+}
+
+if (window.speechSynthesis) {
+  loadVoices();
+  window.speechSynthesis.onvoiceschanged = loadVoices;
+  setTimeout(loadVoices, 600);
+  setTimeout(loadVoices, 1800);
+} else {
+  document.getElementById('env').textContent = '読み上げ機能が使えません ✗';
+}
+
+function say(text, rate){
+  if (!window.speechSynthesis) { log('✗ 読み上げ機能なし'); return; }
+  window.speechSynthesis.cancel();
+  var u = new SpeechSynthesisUtterance(text);
+  u.lang = 'en-US';
+  if (enVoice) u.voice = enVoice;
+  u.rate = rate;
+  u.pitch = 1;
+  u.volume = 1;
+  var t0 = Date.now();
+  u.onstart = function(){ log('▶ 開始 rate=' + rate); };
+  u.onend   = function(){ log('■ 終了 rate=' + rate + '  ' + ((Date.now() - t0) / 1000).toFixed(1) + '秒'); };
+  u.onerror = function(e){ log('✗ エラー: ' + (e.error || '不明')); };
+  window.speechSynthesis.speak(u);
+}
+
+function sayTwo(){
+  if (!window.speechSynthesis) { log('✗ 読み上げ機能なし'); return; }
+  window.speechSynthesis.cancel();
+  LINE_TWO.forEach(function(text, i){
+    var u = new SpeechSynthesisUtterance(text);
+    u.lang = 'en-US';
+    if (enVoice) u.voice = enVoice;
+    u.rate = 0.9;
+    u.onstart = function(){ log('▶ ' + (i + 1) + '文目 開始'); };
+    u.onend   = function(){ log('■ ' + (i + 1) + '文目 終了'); };
+    u.onerror = function(e){ log('✗ ' + (i + 1) + '文目 エラー: ' + (e.error || '不明')); };
+    window.speechSynthesis.speak(u);
+  });
+}
+
+function makeResult(){
+  var q = [
+    ['英語の音が鳴った', 'c1'],
+    ['速度の違いがはっきり分かった', 'c2'],
+    ['長い文が切れなかった', 'c3'],
+    ['2文つづけて鳴った', 'c4'],
+    ['声が聞き取りやすい', 'c5']
+  ];
+  var out = ['【音声チェック結果】'];
+  var ng = 0;
+  q.forEach(function(p){
+    var ok = document.getElementById(p[1]).checked;
+    if (!ok) ng++;
+    out.push((ok ? '✓ ' : '✗ ') + p[0]);
+  });
+  out.push('');
+  out.push('英語の声: ' + enVoices.length + '個');
+  if (enVoice) out.push('使った声: ' + enVoice.name + ' (' + enVoice.lang + ')');
+  out.push('');
+  out.push(ng === 0 ? '→ A案そのままで進められます'
+         : ng <= 1 ? '→ おおむねOK。1点だけ要相談'
+         : '→ 一部をB案（音声ファイル）に切替が必要かも');
+  document.getElementById('result').textContent = out.join('\n');
+}
+
+document.getElementById('b-basic').addEventListener('click', function(){ say(LINE_BASIC, 1.0); });
+document.getElementById('b-long').addEventListener('click',  function(){ say(LINE_LONG, 0.9); });
+document.getElementById('b-two').addEventListener('click',   sayTwo);
+document.getElementById('b-result').addEventListener('click', makeResult);
+
+Array.prototype.forEach.call(document.querySelectorAll('button[data-rate]'), function(btn){
+  btn.addEventListener('click', function(){ say(LINE_BASIC, parseFloat(btn.dataset.rate)); });
+});
+</script>
+</body>
+</html>

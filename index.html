@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>英語学習</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div id="app">
+
+  <!-- はじめの画面 -->
+  <section id="screen-start" class="screen">
+    <div class="scene-emoji" id="start-emoji">🏨</div>
+    <h1 id="start-title">ホテル</h1>
+    <p class="act" id="start-act">第1幕　チェックイン</p>
+    <p class="situation" id="start-situation"></p>
+    <button class="primary" id="btn-start">はじめる</button>
+    <p class="mute-note">🔇 iPhoneの消音スイッチはオフにしてください</p>
+  </section>
+
+  <!-- セッション画面 -->
+  <section id="screen-session" class="screen hidden">
+
+    <header class="bar">
+      <span id="turn-counter">1 / 3</span>
+      <div class="progress"><div id="progress-fill"></div></div>
+    </header>
+
+    <!-- 1. 聞く -->
+    <div class="stage" id="stage-listen">
+      <p class="stage-label">相手が何か言っています</p>
+      <button class="primary big-play" id="btn-listen">▶　聞く</button>
+    </div>
+
+    <!-- 2. 推測 -->
+    <div class="stage hidden" id="stage-guess">
+      <p class="stage-label">なんて言ってた？</p>
+      <div id="choices"></div>
+      <div class="sub-actions">
+        <button class="ghost" id="btn-replay">🔁 もう一回</button>
+        <button class="ghost" id="btn-dunno">わからない</button>
+      </div>
+    </div>
+
+    <!-- 3. 聞き返す -->
+    <div class="stage hidden" id="stage-askagain">
+      <p class="stage-label" id="guess-feedback"></p>
+      <p class="instruction">声に出して聞き返してみましょう</p>
+      <p class="say-this">Sorry?</p>
+      <button class="primary" id="btn-said-sorry">言えた</button>
+      <p class="whisper">声を出せないときは、口を動かすだけでOK</p>
+    </div>
+
+    <!-- 4. 答え合わせ -->
+    <div class="stage hidden" id="stage-answer">
+      <p class="stage-label">相手はこう言っていました</p>
+      <p class="english" id="answer-en"></p>
+      <p class="japanese" id="answer-ja"></p>
+      <p class="hint" id="answer-hint"></p>
+      <button class="ghost" id="btn-replay-slow">🔁 ゆっくり聞く</button>
+      <button class="primary" id="btn-to-speak">自分の番へ</button>
+    </div>
+
+    <!-- 5. 言ってみる -->
+    <div class="stage hidden" id="stage-speak">
+      <p class="stage-label">あなたの番</p>
+      <p class="say-this" id="speak-en"></p>
+      <p class="japanese" id="speak-ja"></p>
+      <button class="ghost" id="btn-model">▶ お手本を聞く</button>
+      <button class="primary" id="btn-said">言えた</button>
+    </div>
+
+    <!-- 仕上げ -->
+    <div class="stage hidden" id="stage-review">
+      <p class="stage-label">仕上げ</p>
+      <p class="instruction">最後に、会話を通しで聞いてみましょう。<br>
+        最初より分かるはずです。</p>
+      <button class="primary big-play" id="btn-review-play">▶　通しで聞く</button>
+      <button class="ghost" id="btn-finish">おわる</button>
+    </div>
+
+  </section>
+
+  <!-- おわり -->
+  <section id="screen-done" class="screen hidden">
+    <div class="scene-emoji">✅</div>
+    <h1>第1幕クリア</h1>
+    <p class="act">ホテル　チェックイン</p>
+    <div class="learned">
+      <p class="learned-title">今日おぼえた言い方</p>
+      <ul id="learned-list"></ul>
+    </div>
+    <button class="primary" id="btn-again">もう一度やる</button>
+  </section>
+
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
