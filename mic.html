@@ -169,13 +169,32 @@ function words(s){
 var FILLER = {'a':1,'an':1,'the':1,'is':1,'are':1,'am':1,'do':1,'does':1,
               'to':1,'of':1,'and':1,'in':1,'it':1,'you':1,'i':1,'my':1,'me':1};
 
+// 文の途中で大文字で始まる語＝固有名詞とみなし、判定から外す。
+// 英語の音声認識は日本語の名前を拾えない（Tanaka → "the car"）。
+// 名前が通じるかは発音練習の本質ではないので、減点しない。
+function properNouns(target){
+  var raw = target.split(/\s+/);
+  var set = {};
+  raw.forEach(function(w, i){
+    var clean = w.replace(/[^A-Za-z']/g, '');
+    if (!clean) return;
+    if (clean === 'I') return;  // 一人称は固有名詞ではない
+    var startsSentence = i === 0 || /[.!?]$/.test(raw[i - 1] || '');
+    if (!startsSentence && /^[A-Z]/.test(clean)) set[clean.toLowerCase()] = true;
+  });
+  return set;
+}
+
 function judge(target, heard){
+  var proper = properNouns(target);
   var t = words(target), h = words(heard);
   var pool = h.slice();
   var missing = [];
+  var ignored = [];
   var keyTotal = 0, keyHit = 0;
 
   t.forEach(function(w){
+    if (proper[w]) { ignored.push(w); return; }
     var isKey = !FILLER[w];
     if (isKey) keyTotal++;
     var idx = pool.indexOf(w);
@@ -188,7 +207,7 @@ function judge(target, heard){
   });
 
   var ratio = keyTotal ? keyHit / keyTotal : 1;
-  return { ratio: ratio, missing: missing, heard: heard };
+  return { ratio: ratio, missing: missing, ignored: ignored, heard: heard };
 }
 
 function showVerdict(target, heard){
@@ -213,6 +232,13 @@ function showVerdict(target, heard){
   box.appendChild(v);
   box.appendChild(d);
 
+  if (r.ignored.length) {
+    var note = document.createElement('div');
+    note.className = 'detail';
+    note.textContent = '（「' + r.ignored.join('」「') + '」は固有名詞なので判定から除外）';
+    box.appendChild(note);
+  }
+
   var hEl = document.getElementById('heard');
   hEl.style.display = 'block';
   hEl.textContent = '聞こえたのは: ' + heard;
@@ -226,6 +252,7 @@ var recording = false;
 var gotResult = false;
 var sawAudio = false;
 var sawSpeech = false;
+var lastInterim = '';
 var startedAt = 0;
 var btnRec = document.getElementById('btn-rec');
 var statusEl = document.getElementById('status');
@@ -275,6 +302,7 @@ btnRec.addEventListener('click', function(){
   gotResult = false;
   sawAudio = false;
   sawSpeech = false;
+  lastInterim = '';
   startedAt = Date.now();
 
   rec = new SR();
@@ -297,6 +325,7 @@ btnRec.addEventListener('click', function(){
     var r = e.results[e.results.length - 1];
     var best = r[0];
     if (!r.isFinal) {
+      lastInterim = best.transcript;
       log('… 途中: "' + best.transcript + '"');
       setStatus('「' + best.transcript + '」', 'listening');
       return;
@@ -320,7 +349,14 @@ btnRec.addEventListener('click', function(){
 
   rec.onend = function(){
     log('■ 終了 ' + ms() + ' / 音:' + (sawAudio ? 'あり' : 'なし') + ' 声:' + (sawSpeech ? 'あり' : 'なし') + ' 結果:' + (gotResult ? 'あり' : 'なし'));
-    if (!gotResult) {
+    // iOS Safari は確定結果(isFinal)を返さずに終わることがある。
+    // 途中経過が届いていればそれを結果として使う。
+    if (!gotResult && lastInterim) {
+      gotResult = true;
+      log('✓ 途中経過を結果として採用: "' + lastInterim + '"');
+      setStatus('認識できました', 'heard');
+      showVerdict(currentTarget(), lastInterim);
+    } else if (!gotResult) {
       if (!sawAudio)       setStatus('マイクから音が入っていません', 'problem');
       else if (!sawSpeech) setStatus('音は入ったが声として拾えませんでした', 'problem');
       else                 setStatus('声は拾えたが文字にできませんでした', 'problem');
