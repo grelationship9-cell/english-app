@@ -51,6 +51,14 @@
     padding:12px;margin-top:10px;color:var(--dim);max-height:220px;overflow:auto;
   }
   .warn{background:#2a1f1f;border-color:#554433;color:#ffd9a0;font-size:13.5px}
+  .status{
+    text-align:center;font-size:15px;font-weight:600;padding:12px;
+    background:#0d0f15;border:1px solid var(--line);border-radius:10px;margin-top:10px;
+  }
+  .status.listening{background:rgba(255,122,122,.14);border-color:var(--ng);color:var(--ng)}
+  .status.heard{background:rgba(62,207,142,.12);border-color:var(--ok);color:var(--ok)}
+  .status.problem{background:rgba(255,184,107,.12);border-color:var(--warn);color:var(--warn)}
+  #btn-copy{background:#333c52;font-size:14px;padding:13px}
 </style>
 </head>
 <body>
@@ -76,7 +84,10 @@
   <div class="target-ja">はい、田中で予約しています。</div>
 
   <button class="primary" id="btn-model">▶ お手本を聞く</button>
-  <button id="btn-rec">🎤 話す</button>
+  <button id="btn-perm">① マイクの許可を確認</button>
+  <button id="btn-rec">② 🎤 話す</button>
+
+  <div class="status" id="status">待機中</div>
 
   <div id="verdict-box"></div>
   <div class="heard" id="heard" style="display:none"></div>
@@ -93,6 +104,7 @@
 <div class="card">
   <h2>ログ</h2>
   <div class="out" id="log">—</div>
+  <button id="btn-copy">📋 状況とログをコピー</button>
 </div>
 
 <script>
@@ -211,42 +223,110 @@ function showVerdict(target, heard){
 
 var rec = null;
 var recording = false;
+var gotResult = false;
+var sawAudio = false;
+var sawSpeech = false;
+var startedAt = 0;
 var btnRec = document.getElementById('btn-rec');
+var statusEl = document.getElementById('status');
 
 function currentTarget(){ return document.getElementById('target').textContent; }
+
+function setStatus(text, cls){
+  statusEl.textContent = text;
+  statusEl.className = 'status' + (cls ? ' ' + cls : '');
+}
 
 function stopRec(){
   recording = false;
   btnRec.classList.remove('rec');
-  btnRec.textContent = '🎤 話す';
+  btnRec.textContent = '② 🎤 話す';
   if (rec) { try { rec.stop(); } catch (e) {} }
 }
 
+// マイクの許可は別ボタンで先に取る。
+// 許可ダイアログのあとに認識を始めると、iOSでは
+// ユーザー操作の扱いが切れて start() が弾かれることがあるため。
+document.getElementById('btn-perm').addEventListener('click', function(){
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    log('✗ getUserMedia がありません');
+    setStatus('マイクにアクセスできません', 'problem');
+    return;
+  }
+  setStatus('許可を確認しています...');
+  navigator.mediaDevices.getUserMedia({ audio: true })
+    .then(function(stream){
+      log('✓ マイクの許可あり');
+      setStatus('マイクOK。②を押して話してください', 'heard');
+      stream.getTracks().forEach(function(t){ t.stop(); });
+    })
+    .catch(function(err){
+      log('✗ マイク許可エラー: ' + err.name + ' / ' + err.message);
+      setStatus('マイクが許可されていません（' + err.name + '）', 'problem');
+    });
+});
+
 btnRec.addEventListener('click', function(){
-  if (!SR) { log('✗ 音声認識APIがありません'); return; }
+  if (!SR) { log('✗ 音声認識APIがありません'); setStatus('音声認識に対応していません', 'problem'); return; }
   if (!isSecure) { log('✗ https で開いてください'); return; }
 
   if (recording) { stopRec(); return; }
 
+  gotResult = false;
+  sawAudio = false;
+  sawSpeech = false;
+  startedAt = Date.now();
+
   rec = new SR();
   rec.lang = 'en-US';
-  rec.interimResults = false;
+  rec.interimResults = true;
   rec.maxAlternatives = 3;
   rec.continuous = false;
 
-  rec.onstart = function(){ log('🎤 録音開始'); };
+  function ms(){ return (Date.now() - startedAt) + 'ms'; }
+
+  rec.onstart       = function(){ log('🎤 開始'); setStatus('聞いています... 話してください', 'listening'); };
+  rec.onaudiostart  = function(){ sawAudio = true;  log('・音の取り込み開始 ' + ms()); };
+  rec.onsoundstart  = function(){ log('・物音を検知 ' + ms()); };
+  rec.onspeechstart = function(){ sawSpeech = true; log('・話し声を検知 ' + ms()); setStatus('声を拾っています', 'listening'); };
+  rec.onspeechend   = function(){ log('・話し声おわり ' + ms()); };
+  rec.onaudioend    = function(){ log('・音の取り込み終了 ' + ms()); };
+  rec.onnomatch     = function(){ log('△ 認識できず（nomatch） ' + ms()); };
+
   rec.onresult = function(e){
-    var best = e.results[0][0];
-    log('認識: "' + best.transcript + '" (確信度 ' + (best.confidence || 0).toFixed(2) + ')');
+    var r = e.results[e.results.length - 1];
+    var best = r[0];
+    if (!r.isFinal) {
+      log('… 途中: "' + best.transcript + '"');
+      setStatus('「' + best.transcript + '」', 'listening');
+      return;
+    }
+    gotResult = true;
+    log('✓ 認識: "' + best.transcript + '" (確信度 ' + (best.confidence || 0).toFixed(2) + ') ' + ms());
+    setStatus('認識できました', 'heard');
     showVerdict(currentTarget(), best.transcript);
     stopRec();
   };
+
   rec.onerror = function(e){
-    log('✗ エラー: ' + e.error);
-    if (e.error === 'not-allowed') log('  → マイクの許可が必要です');
+    log('✗ エラー: ' + e.error + ' ' + ms());
+    if (e.error === 'not-allowed')      setStatus('マイクが許可されていません', 'problem');
+    else if (e.error === 'no-speech')   setStatus('声が拾えませんでした', 'problem');
+    else if (e.error === 'network')     setStatus('通信エラー（認識はネット接続が必要）', 'problem');
+    else if (e.error === 'service-not-allowed') setStatus('音声認識が端末側で無効です', 'problem');
+    else                                setStatus('エラー: ' + e.error, 'problem');
     stopRec();
   };
-  rec.onend = function(){ log('■ 録音終了'); stopRec(); };
+
+  rec.onend = function(){
+    log('■ 終了 ' + ms() + ' / 音:' + (sawAudio ? 'あり' : 'なし') + ' 声:' + (sawSpeech ? 'あり' : 'なし') + ' 結果:' + (gotResult ? 'あり' : 'なし'));
+    if (!gotResult) {
+      if (!sawAudio)       setStatus('マイクから音が入っていません', 'problem');
+      else if (!sawSpeech) setStatus('音は入ったが声として拾えませんでした', 'problem');
+      else                 setStatus('声は拾えたが文字にできませんでした', 'problem');
+    }
+    stopRec();
+  };
 
   try {
     rec.start();
@@ -255,7 +335,19 @@ btnRec.addEventListener('click', function(){
     btnRec.textContent = '⏹ 話し終わったら押す';
   } catch (err) {
     log('✗ 開始できません: ' + err);
+    setStatus('認識を開始できません', 'problem');
     stopRec();
+  }
+});
+
+document.getElementById('btn-copy').addEventListener('click', function(){
+  var text = document.getElementById('env').textContent + '\n\n--- ログ ---\n' + logEl.textContent;
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(text).then(function(){
+      log('（コピーしました）');
+    });
+  } else {
+    window.prompt('この内容をコピーしてください', text);
   }
 });
 
