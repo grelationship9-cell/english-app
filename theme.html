@@ -43,6 +43,17 @@
   --weight:700;
 }
 
+/* --- D: ミント（参考画像の方向） --- */
+[data-theme="D"]{
+  --bg:#E3F1ED; --card:#FFFFFF; --line:#D2E7E1;
+  --fg:#1E2B28; --dim:#6D8480;
+  --acc:#2FB9A6; --acc-fg:#FFFFFF;
+  --sub:#3FC7B4; --ok:#2FB9A6; --warn:#EFA23F; --ng:#E8776B;
+  --radius:18px; --shadow:0 2px 0 rgba(30,43,40,.06);
+  --shadow-card:0 3px 12px rgba(30,43,40,.07);
+  --weight:700;
+}
+
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 
 body{
@@ -153,13 +164,64 @@ body{
   background:var(--sub);color:#fff;font-size:12px;font-weight:700;
   padding:5px 12px;border-radius:99px;
 }
+
+/* ---- 場面えらび（参考画像のグリッド） ---- */
+.sec-head{
+  display:flex;align-items:baseline;justify-content:space-between;
+  margin:4px 0 12px;
+}
+.sec-head h3{font-size:16px;font-weight:800;margin:0}
+.sec-head a{font-size:12.5px;color:var(--acc);text-decoration:none;font-weight:700}
+
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+
+.tile{
+  background:var(--bg);border:2px solid var(--line);
+  border-radius:calc(var(--radius) - 4px);
+  padding:14px 6px 11px;text-align:center;cursor:pointer;
+  position:relative;
+}
+.tile .ico{display:block;font-size:30px;line-height:1.1;margin-bottom:6px}
+.tile .nm{display:block;font-size:12.5px;font-weight:700;line-height:1.35}
+.tile .lv{display:block;font-size:10.5px;color:var(--dim);margin-top:2px}
+.tile.done{border-color:var(--acc)}
+.tile.done::after{
+  content:"✓";position:absolute;top:6px;right:8px;
+  color:var(--acc);font-size:13px;font-weight:900;
+}
+.tile.star::before{
+  content:"⭐";position:absolute;top:5px;left:7px;font-size:12px;
+}
+
+/* 狭い画面でも崩れないよう、ボタンは文字の下へ回す */
+.review-row{
+  display:grid;grid-template-columns:auto 1fr;
+  gap:10px 12px;align-items:center;
+  background:var(--bg);border:2px solid var(--line);
+  border-radius:calc(var(--radius) - 6px);
+  padding:13px 14px;margin:9px 0;
+}
+.review-row .ico{font-size:26px;grid-row:span 2;align-self:start}
+.review-row .txt{min-width:0}
+.review-row .txt b{display:block;font-size:15px;font-weight:700;line-height:1.4}
+.review-row .txt small{color:var(--dim);font-size:12px}
+.review-row .acts{display:flex;gap:8px}
+.review-row .acts button{
+  flex:1;margin:0;padding:9px 10px;font-size:13px;font-weight:700;
+  border-radius:99px;border:2px solid var(--line);
+  background:var(--card);color:var(--dim);font-family:inherit;cursor:pointer;
+}
+.review-row .acts button.on{
+  background:var(--acc);border-color:var(--acc);color:var(--acc-fg);
+}
 </style>
 </head>
-<body data-theme="A">
+<body data-theme="D">
 
 <div class="switcher">
-  <button data-t="A" class="on">A<span>あかるい</span></button>
-  <button data-t="B">B<span>よる・ネオン</span></button>
+  <button data-t="D" class="on">D<span>ミント</span></button>
+  <button data-t="A">A<span>あかるい</span></button>
+  <button data-t="B">B<span>よる</span></button>
   <button data-t="C">C<span>やわらか</span></button>
 </div>
 
@@ -176,6 +238,34 @@ body{
     </div>
     <button class="btn main big">はじめる</button>
     <button class="btn">ほかの場面をえらぶ</button>
+  </div>
+
+  <div class="caption">今日の復習</div>
+  <div class="mock">
+    <div class="sec-head"><h3>今日の復習</h3><a href="#">すべて見る</a></div>
+    <div class="review-row">
+      <span class="ico">✈️</span>
+      <span class="txt"><b>空港のチェックイン</b><small>3日ぶり ・ ばっちり続き</small></span>
+      <span class="acts"><button class="on">3分</button><button>フル</button></span>
+    </div>
+    <div class="review-row">
+      <span class="ico">🤒</span>
+      <span class="txt"><b>⭐ 体調不良を伝える</b><small>5日ぶり ・ あやしい</small></span>
+      <span class="acts"><button>3分</button><button class="on">フル</button></span>
+    </div>
+  </div>
+
+  <div class="caption">場面をえらぶ</div>
+  <div class="mock">
+    <div class="sec-head"><h3>シチュエーションから</h3><a href="#">すべて見る</a></div>
+    <div class="grid">
+      <div class="tile done"><span class="ico">🏨</span><span class="nm">ホテル</span><span class="lv">Lv.2</span></div>
+      <div class="tile done"><span class="ico">✈️</span><span class="nm">空港</span><span class="lv">Lv.3</span></div>
+      <div class="tile"><span class="ico">🍽️</span><span class="nm">レストラン</span><span class="lv">Lv.1</span></div>
+      <div class="tile star"><span class="ico">🤒</span><span class="nm">体調不良</span><span class="lv">Lv.1</span></div>
+      <div class="tile"><span class="ico">🚇</span><span class="nm">電車・地下鉄</span><span class="lv">未挑戦</span></div>
+      <div class="tile"><span class="ico">🛍️</span><span class="nm">買い物</span><span class="lv">未挑戦</span></div>
+    </div>
   </div>
 
   <div class="caption">聞いたあと・3択</div>
