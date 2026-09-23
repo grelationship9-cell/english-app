@@ -275,10 +275,82 @@ button.big-play{
 
 .sub-actions button{margin:0}
 
-/* ---- 再生中 ---- */
+/* ---- 再生中・録音中 ---- */
 
 button.speaking{
   background:var(--acc);
   color:#0a1020;
   border-color:var(--acc);
 }
+
+button.recording{
+  background:#ff7a7a;
+  color:#1a0808;
+  border-color:#ff7a7a;
+}
+
+/* ---- 「通じるか」判定 ---- */
+
+.rec-status{
+  text-align:center;
+  font-size:15px;
+  font-weight:600;
+  padding:14px;
+  margin-top:12px;
+  background:#0d0f15;
+  border:1px solid var(--line);
+  border-radius:11px;
+  color:var(--dim);
+}
+
+.rec-status.listening{
+  background:rgba(255,122,122,.12);
+  border-color:#ff7a7a;
+  color:#ff9d9d;
+}
+
+.rec-status.problem{
+  background:rgba(255,184,107,.12);
+  border-color:var(--warn);
+  color:var(--warn);
+}
+
+.verdict{
+  text-align:center;
+  font-size:22px;
+  font-weight:700;
+  margin:18px 0 4px;
+}
+
+.verdict.ok{color:var(--ok)}
+.verdict.mid{color:var(--warn)}
+.verdict.ng{color:#ff7a7a}
+
+.verdict-detail{
+  text-align:center;
+  font-size:14.5px;
+  color:var(--dim);
+  margin:0 0 4px;
+}
+
+.verdict-heard{
+  text-align:center;
+  font-size:13.5px;
+  color:var(--dim);
+  font-family:ui-monospace,Menlo,monospace;
+  background:#0d0f15;
+  border:1px solid var(--line);
+  border-radius:10px;
+  padding:10px 12px;
+  margin:12px 0 0;
+  word-break:break-word;
+}
+
+#speak-actions{
+  display:flex;
+  gap:10px;
+  margin-top:14px;
+}
+
+#speak-actions.hidden{display:none}
+#speak-actions button{margin:0;flex:1}

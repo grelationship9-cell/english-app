@@ -220,11 +220,126 @@ function toAnswer() {
 }
 
 // 5. 言ってみる
+function resetSpeakStage() {
+  $('verdict-box').innerHTML = '';
+  $('rec-status').classList.add('hidden');
+  $('speak-actions').classList.add('hidden');
+  $('btn-rec').classList.remove('hidden', 'recording');
+  $('btn-rec').textContent = '🎤 言ってみる';
+
+  // マイクが使えない環境では、声なしで進むボタンだけを主役にする
+  if (!Recognize.available()) {
+    $('btn-rec').classList.add('hidden');
+    $('btn-said').textContent = '言えた';
+    $('btn-said').className = 'primary';
+  } else {
+    $('btn-said').textContent = '声を出さずに進む';
+    $('btn-said').className = 'ghost';
+  }
+}
+
 function toSpeak() {
   var t = currentTurn();
   $('speak-en').textContent = t.自分;
   $('speak-ja').textContent = t.自分訳;
+  resetSpeakStage();
   showStage('speak');
+}
+
+function setRecStatus(text, cls) {
+  var el = $('rec-status');
+  el.textContent = text;
+  el.className = 'rec-status' + (cls ? ' ' + cls : '');
+}
+
+function onRec() {
+  var btn = $('btn-rec');
+
+  if (btn.classList.contains('recording')) {
+    Recognize.stop();
+    return;
+  }
+
+  $('verdict-box').innerHTML = '';
+  setRecStatus('聞いています… 話してください', 'listening');
+
+  var started = Recognize.start({
+    onInterim: function (text) {
+      setRecStatus('「' + text + '」', 'listening');
+    },
+    onResult: function (text) {
+      btn.classList.remove('recording');
+      btn.textContent = '🎤 言ってみる';
+      $('rec-status').classList.add('hidden');
+      showVerdict(currentTurn().自分, text);
+    },
+    onNothing: function () {
+      btn.classList.remove('recording');
+      btn.textContent = '🎤 言ってみる';
+      setRecStatus('声が拾えませんでした。もう一度どうぞ', 'problem');
+    },
+    onError: function (err) {
+      btn.classList.remove('recording');
+      btn.textContent = '🎤 言ってみる';
+      setRecStatus(
+        err === 'not-allowed' ? 'マイクが許可されていません'
+        : err === 'no-speech' ? '声が拾えませんでした。もう一度どうぞ'
+        : err === 'network'   ? '判定にはネット接続が必要です'
+        : 'うまくいきませんでした。もう一度どうぞ',
+        'problem'
+      );
+    }
+  });
+
+  if (started) {
+    btn.classList.add('recording');
+    btn.textContent = '⏹ 話し終わったら押す';
+  }
+}
+
+function showVerdict(target, heard) {
+  var r = Judge.evaluate(target, heard);
+  var box = $('verdict-box');
+  box.innerHTML = '';
+
+  var v = document.createElement('p');
+  var d = document.createElement('p');
+  d.className = 'verdict-detail';
+
+  if (r.level === 'ok') {
+    v.className = 'verdict ok';
+    v.textContent = '✓ 通じます';
+    d.textContent = r.missing.length
+      ? '「' + r.missing.join('」「') + '」は拾えませんでしたが、これで伝わります'
+      : 'そのまま使って大丈夫です';
+  } else if (r.level === 'mid') {
+    v.className = 'verdict mid';
+    v.textContent = '△ 惜しい';
+    d.textContent = '「' + r.missing.join('」「') + '」が聞き取れませんでした';
+  } else {
+    v.className = 'verdict ng';
+    v.textContent = '✗ 違うようです';
+    d.textContent = 'お手本をもう一度聞いてみましょう';
+  }
+
+  box.appendChild(v);
+  box.appendChild(d);
+
+  if (r.level !== 'ok') {
+    var h = document.createElement('p');
+    h.className = 'verdict-heard';
+    h.textContent = '聞こえたのは: ' + heard;
+    box.appendChild(h);
+  }
+
+  // 判定がどうであれ先へ進める。止めない。
+  // ただし通じていないときは「もう一度」を主役にして、やり直しを促す。
+  var ok = r.level === 'ok';
+  $('btn-retry').className = ok ? 'ghost' : 'primary';
+  $('btn-next').className  = ok ? 'primary' : 'ghost';
+
+  $('btn-rec').classList.add('hidden');
+  $('speak-actions').classList.remove('hidden');
 }
 
 function onSaid() {
@@ -313,6 +428,9 @@ $('btn-to-speak').addEventListener('click', toSpeak);
 $('btn-model').addEventListener('click', function () {
   speak(currentTurn().自分, RATE_MODEL, $('btn-model'));
 });
+$('btn-rec').addEventListener('click', onRec);
+$('btn-retry').addEventListener('click', resetSpeakStage);
+$('btn-next').addEventListener('click', onSaid);
 $('btn-said').addEventListener('click', onSaid);
 $('btn-review-play').addEventListener('click', onReviewPlay);
 $('btn-finish').addEventListener('click', onFinish);

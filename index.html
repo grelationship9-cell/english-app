@@ -70,8 +70,19 @@
       <p class="stage-label">あなたの番</p>
       <p class="say-this" id="speak-en"></p>
       <p class="japanese" id="speak-ja"></p>
+
       <button class="ghost" id="btn-model">▶ お手本を聞く</button>
-      <button class="primary" id="btn-said">言えた</button>
+      <button class="primary" id="btn-rec">🎤 言ってみる</button>
+
+      <div class="rec-status hidden" id="rec-status"></div>
+      <div id="verdict-box"></div>
+
+      <div class="hidden" id="speak-actions">
+        <button class="ghost" id="btn-retry">もう一度言う</button>
+        <button class="primary" id="btn-next">次へ</button>
+      </div>
+
+      <button class="ghost" id="btn-said">声を出さずに進む</button>
     </div>
 
     <!-- 仕上げ -->
@@ -99,6 +110,7 @@
 
 </div>
 
+<script src="recognize.js"></script>
 <script src="app.js"></script>
 </body>
 </html>
