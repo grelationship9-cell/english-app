@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>見た目を選ぶ</title>
+<style>
+/* ============================================================
+   3つの「ポップ」を見比べるページ。
+   上のボタンでテーマを切り替えると、下の画面が丸ごと変わる。
+   ============================================================ */
+
+/* --- A: あかるいポップ --- */
+[data-theme="A"]{
+  --bg:#FFF7EF; --card:#FFFFFF; --line:#FFE0CC;
+  --fg:#2E2A3B; --dim:#8A8199;
+  --acc:#FF6B5B; --acc-fg:#FFFFFF;
+  --sub:#2BC4B4; --ok:#22B573; --warn:#F5A524; --ng:#FF5C7A;
+  --radius:22px; --shadow:0 4px 0 rgba(0,0,0,.07);
+  --shadow-card:0 6px 20px rgba(255,107,91,.10);
+  --weight:800;
+}
+
+/* --- B: よるのポップ（ネオン） --- */
+[data-theme="B"]{
+  --bg:#16131F; --card:#231E33; --line:#362E4D;
+  --fg:#F6F1FF; --dim:#9C92B8;
+  --acc:#FF5FA2; --acc-fg:#1A0A14;
+  --sub:#5EE6C5; --ok:#5EE6C5; --warn:#FFC857; --ng:#FF6B8A;
+  --radius:20px; --shadow:0 0 0 rgba(0,0,0,0);
+  --shadow-card:0 0 28px rgba(255,95,162,.16);
+  --weight:800;
+}
+
+/* --- C: やわらかポップ --- */
+[data-theme="C"]{
+  --bg:#F5F1E8; --card:#FFFFFF; --line:#E6DFD0;
+  --fg:#3E3A47; --dim:#8D8678;
+  --acc:#F2994A; --acc-fg:#FFFFFF;
+  --sub:#7FB39B; --ok:#6FAE8C; --warn:#E0A458; --ng:#E07A7A;
+  --radius:26px; --shadow:0 3px 0 rgba(0,0,0,.05);
+  --shadow-card:0 8px 22px rgba(0,0,0,.05);
+  --weight:700;
+}
+
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+
+body{
+  margin:0;background:var(--bg);color:var(--fg);
+  font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif;
+  line-height:1.7;transition:background .25s ease,color .25s ease;
+}
+
+/* ---- 切り替えバー ---- */
+.switcher{
+  position:sticky;top:0;z-index:10;
+  background:var(--card);border-bottom:1px solid var(--line);
+  padding:12px 14px calc(12px + env(safe-area-inset-bottom,0px));
+  display:flex;gap:8px;
+}
+.switcher button{
+  flex:1;padding:12px 6px;border-radius:14px;border:2px solid var(--line);
+  background:transparent;color:var(--dim);font-family:inherit;
+  font-size:13px;font-weight:700;cursor:pointer;line-height:1.35;
+}
+.switcher button.on{
+  background:var(--acc);border-color:var(--acc);color:var(--acc-fg);
+}
+.switcher button span{display:block;font-size:11px;font-weight:500;opacity:.85}
+
+.wrap{max-width:520px;margin:0 auto;padding:22px 20px 60px}
+
+.caption{
+  font-size:12px;color:var(--dim);letter-spacing:.1em;
+  text-align:center;margin:26px 0 12px;text-transform:uppercase;
+}
+
+/* ---- 画面まるごとの見本 ---- */
+.mock{
+  background:var(--card);border:1px solid var(--line);
+  border-radius:var(--radius);box-shadow:var(--shadow-card);
+  padding:24px 20px 26px;
+}
+
+.bar{display:flex;align-items:center;gap:12px;margin-bottom:26px}
+.bar .count{font-size:13px;color:var(--dim);font-weight:700}
+.bar .track{flex:1;height:8px;background:var(--line);border-radius:99px;overflow:hidden}
+.bar .fill{height:100%;width:34%;background:var(--acc);border-radius:99px}
+
+.emoji{font-size:44px;text-align:center;margin-bottom:10px;line-height:1}
+
+.label{
+  text-align:center;color:var(--dim);font-size:14px;
+  font-weight:600;margin:0 0 18px;
+}
+
+.choice{
+  display:block;width:100%;text-align:left;
+  padding:16px 18px;margin:9px 0;font-size:16px;font-weight:600;
+  font-family:inherit;color:var(--fg);
+  background:var(--bg);border:2px solid var(--line);
+  border-radius:calc(var(--radius) - 6px);cursor:pointer;line-height:1.55;
+}
+.choice.pick{
+  background:var(--ok);border-color:var(--ok);color:#fff;
+}
+
+.row{display:flex;gap:9px;margin-top:12px}
+.row .btn{flex:1;margin:0}
+
+.btn{
+  display:block;width:100%;padding:17px;margin:9px 0;
+  font-size:17px;font-weight:var(--weight);font-family:inherit;
+  border-radius:calc(var(--radius) - 6px);cursor:pointer;
+  border:2px solid var(--line);background:var(--bg);color:var(--dim);
+}
+.btn.main{
+  background:var(--acc);border-color:var(--acc);color:var(--acc-fg);
+  box-shadow:var(--shadow);
+}
+.btn.sub{
+  background:var(--sub);border-color:var(--sub);color:#fff;
+  box-shadow:var(--shadow);
+}
+.btn.big{padding:24px;font-size:19px;letter-spacing:.06em}
+
+.say{
+  text-align:center;font-size:25px;font-weight:var(--weight);
+  margin:6px 0 4px;line-height:1.45;
+}
+.ja{text-align:center;color:var(--dim);font-size:14.5px;margin:0 0 18px}
+
+.verdict{text-align:center;font-size:23px;font-weight:800;margin:18px 0 4px;color:var(--ok)}
+.verdict-d{text-align:center;font-size:14px;color:var(--dim);margin:0}
+
+.streak{
+  display:inline-flex;align-items:center;gap:7px;
+  background:var(--acc);color:var(--acc-fg);
+  padding:8px 16px;border-radius:99px;font-weight:800;font-size:15px;
+}
+.center{text-align:center}
+
+.card-scene{
+  background:var(--bg);border:2px solid var(--line);
+  border-radius:calc(var(--radius) - 4px);
+  padding:18px;margin:16px 0 4px;text-align:center;
+}
+.card-scene .name{font-size:21px;font-weight:800;margin:6px 0 2px}
+.card-scene .meta{font-size:13px;color:var(--dim)}
+
+.chips{display:flex;gap:8px;justify-content:center;margin-top:12px;flex-wrap:wrap}
+.chip{
+  background:var(--sub);color:#fff;font-size:12px;font-weight:700;
+  padding:5px 12px;border-radius:99px;
+}
+</style>
+</head>
+<body data-theme="A">
+
+<div class="switcher">
+  <button data-t="A" class="on">A<span>あかるい</span></button>
+  <button data-t="B">B<span>よる・ネオン</span></button>
+  <button data-t="C">C<span>やわらか</span></button>
+</div>
+
+<div class="wrap">
+
+  <div class="caption">ホーム</div>
+  <div class="mock">
+    <div class="center"><span class="streak">🔥 12日つづけてる</span></div>
+    <div class="card-scene">
+      <div class="emoji">🏨</div>
+      <div class="name">ホテル</div>
+      <div class="meta">Lv.2 ・ 3幕 ・ 約18分</div>
+      <div class="chips"><span class="chip">チェックイン</span><span class="chip">トラブル</span><span class="chip">朝食</span></div>
+    </div>
+    <button class="btn main big">はじめる</button>
+    <button class="btn">ほかの場面をえらぶ</button>
+  </div>
+
+  <div class="caption">聞いたあと・3択</div>
+  <div class="mock">
+    <div class="bar"><span class="count">1 / 3</span><span class="track"><span class="fill"></span></span></div>
+    <p class="label">なんて言ってた？</p>
+    <button class="choice">何名様でしょうか？</button>
+    <button class="choice pick">こんばんは。ご予約はいただいていますか？</button>
+    <button class="choice">お支払いはカードですか？</button>
+    <div class="row">
+      <button class="btn">🔁 もう一回</button>
+      <button class="btn">わからない</button>
+    </div>
+  </div>
+
+  <div class="caption">聞き返す</div>
+  <div class="mock">
+    <div class="bar"><span class="count">1 / 3</span><span class="track"><span class="fill"></span></span></div>
+    <p class="label">大丈夫。分からないときは聞き返せばいい</p>
+    <p class="say">Sorry?</p>
+    <p class="ja">声に出して言ってみましょう</p>
+    <button class="btn main">言えた</button>
+  </div>
+
+  <div class="caption">自分の番・判定</div>
+  <div class="mock">
+    <div class="bar"><span class="count">1 / 3</span><span class="track"><span class="fill"></span></span></div>
+    <p class="label">あなたの番</p>
+    <p class="say">Yes, I have a reservation under Tanaka.</p>
+    <p class="ja">はい、田中で予約しています。</p>
+    <button class="btn">▶ お手本を聞く</button>
+    <p class="verdict">✓ 通じます</p>
+    <p class="verdict-d">そのまま使って大丈夫です</p>
+    <div class="row">
+      <button class="btn">もう一度言う</button>
+      <button class="btn main">次へ</button>
+    </div>
+  </div>
+
+  <div class="caption">おわり</div>
+  <div class="mock">
+    <div class="emoji">🎉</div>
+    <p class="say">第1幕クリア！</p>
+    <p class="ja">ホテル・チェックイン</p>
+    <div class="center"><span class="streak">🔥 13日つづけてる</span></div>
+    <button class="btn sub" style="margin-top:20px">もう一場面やる</button>
+    <button class="btn">今日はおわり</button>
+  </div>
+
+</div>
+
+<script>
+Array.prototype.forEach.call(document.querySelectorAll('.switcher button'), function (b) {
+  b.addEventListener('click', function () {
+    document.body.dataset.theme = b.dataset.t;
+    Array.prototype.forEach.call(document.querySelectorAll('.switcher button'), function (o) {
+      o.classList.toggle('on', o === b);
+    });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+});
+</script>
+</body>
+</html>
